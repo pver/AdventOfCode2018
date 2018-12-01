@@ -27,7 +27,6 @@ let challenge1b (inputs:int[]) =
     founds.Add 0 |> ignore
     challenge1b_process_inputs 0 inputs founds
         
-        
 printfn "Solution 1A Example 1: %d <= sould be 3" <| challenge1a [|+1; +1; +1|]
 printfn "Solution 1A Example 2: %d <= sould be 0" <| challenge1a [|+1; +1; -2|]
 printfn "Solution 1A Example 3: %d <= sould be -6" <| challenge1a [|-1; -2; -3|]
