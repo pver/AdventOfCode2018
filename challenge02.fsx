@@ -55,11 +55,12 @@ let inputChallenge2ExampleB = [|
 
 let challenge2b (inputs:string[]) =
     let inputsAsChars = inputs |> Array.map (fun x -> x.ToCharArray())
+    let inputCount = Array.length inputs
 
     let (matchA, matchB) = 
-        seq { for row in 0 .. (inputs.Length-1) do
-                  for col in row .. (inputs.Length-1) do
-                    yield (inputsAsChars.[row], inputsAsChars.[col])
+        seq { for i in 0 .. (inputCount-1) do
+                  for j in i .. (inputCount-1) do
+                    yield (inputsAsChars.[i], inputsAsChars.[j])
         }
         |> Seq.filter (fun (first, second) -> differOnePos first second)
         |> Seq.head
