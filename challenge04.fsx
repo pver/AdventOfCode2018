@@ -29,10 +29,11 @@ let processDay ((day,items):System.DateTime*textitem[]) =
         |> Array.filter (fun x -> isGuardIdItem(x) = false) 
         |> Array.fold (fun (startminute,intermediateday) x -> 
                                                     let newMinute = x.time.Minute
+                                                    let addMinutes = [startminute..(newMinute-1)]
                                                     let newDayItem = 
                                                         if isAsleepItem x 
-                                                        then {intermediateday with awake=intermediateday.awake@[startminute..(newMinute-1)]}
-                                                        else {intermediateday with asleep=intermediateday.asleep@[startminute..(newMinute-1)]}
+                                                        then {intermediateday with awake=intermediateday.awake@addMinutes} // awake before
+                                                        else {intermediateday with asleep=intermediateday.asleep@addMinutes} // asleep before
                                                     (newMinute, newDayItem)
                                                     ) (0,startday)
     items 
@@ -54,38 +55,51 @@ let parseItems (inputPath:string) =
 
 let inputChallenge4 = parseItems "input04.txt"
 
+type SleepByAgent = {id:int;sleepTimes:int[];sleepCount:int}
+
 let sleepTimesByAgentId (items:dayitem[]) =
         items 
         |> Array.groupBy (fun x -> x.id) 
-        |> Array.map (fun (id, iditems) -> 
-                        let alltimes = (iditems |> Array.collect (fun z -> z.asleep |> List.toArray))
-                        (id, alltimes))
+        |> Array.map (fun (id, itemsById) -> 
+                        let sleepTimes = (itemsById |> Array.collect (fun z -> z.asleep |> List.toArray))
+                        {
+                            id=id;
+                            sleepTimes=sleepTimes;
+                            sleepCount=(sleepTimes |> Array.length)
+                        }
+                     )
+
+let mostOccurred (ints:int[]) = 
+    ints 
+    |> Array.groupBy id 
+    |> Array.sortByDescending (fun (_,t) -> t |> Array.length)
+    |> Array.head
+    |> (fun (time,_) -> time)
 
 let challenge4A (items:dayitem[]) =
     let agentSleepTimes = sleepTimesByAgentId items
 
-    let (agentId, sleepTimes) = 
+    let agentMostAsleep = 
         agentSleepTimes
-        |> Array.sortByDescending (fun (_, sleeptimes) -> sleeptimes |> Array.length)
+        |> Array.sortByDescending (fun x -> x.sleepCount)
         |> Array.head
 
-    let minute = 
-        sleepTimes 
-            |> Array.groupBy id 
-            |> Array.sortByDescending (fun (_,times) -> times |>Array.length)
-            |> Array.head
-            |> (fun (time,_) -> time)
-    agentId * minute
+    let minute = agentMostAsleep.sleepTimes |> mostOccurred
+    agentMostAsleep.id * minute
     
 let challenge4B (items:dayitem[]) =
     let agentSleepTimes = sleepTimesByAgentId items
     
-    let (agentId, agentSleepTimes) = 
+    let agentMostAsleepOnTheSameMinute = 
         agentSleepTimes
-        |> Array.sortByDescending (fun (_, sleeptimes) -> sleeptimes |> Array.groupBy id |> Array.sortByDescending (fun (_,x) -> x |> Array.length) |> Array.map (fun (_,x) -> x |> Array.length))
+        |> Array.sortByDescending (fun z -> 
+                                            z.sleepTimes 
+                                            |> Array.groupBy id 
+                                            |> Array.sortByDescending (fun (_,x) -> x |> Array.length) 
+                                            |> Array.map (fun (_,x) -> x |> Array.length))
         |> Array.head
     
-    agentId * (agentSleepTimes |> Array.groupBy id |> Array.sortByDescending (fun (_,x) -> x |> Array.length) |> Array.map (fun (x,_) -> x) |> Array.head)
+    agentMostAsleepOnTheSameMinute.id * (agentMostAsleepOnTheSameMinute.sleepTimes |> Array.groupBy id |> Array.sortByDescending (fun (_,x) -> x |> Array.length) |> Array.map (fun (x,_) -> x) |> Array.head)
 
 printfn "Solution 4A: %A" <| challenge4A inputChallenge4
 printfn "Solution 4B: %A" <| challenge4B inputChallenge4
